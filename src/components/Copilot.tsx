@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { teams } from "@/data/galaxy";
-import { MessageCircle, Search } from "lucide-react";
+import { MessageCircle, Send } from "lucide-react";
 
 function searchKnowledge(query: string) {
   const q = query.toLowerCase();
@@ -21,19 +21,62 @@ function searchKnowledge(query: string) {
   return results;
 }
 
+function generateAssistantReply(query: string) {
+  const results = searchKnowledge(query);
+  if (!results.length) {
+    return "I didn't find a direct match in the current charters or AORs. Try referencing a team name or an area of responsibility. You can also ask things like \"Who owns payments risk?\" or \"Show me Retail Ops AORs.\"";
+  }
+  const top = results.slice(0, 3);
+  const bullets = top.map((r) => `• ${r.team}: ${r.snippet}`).join("\n");
+  return `Here’s what I found related to "${query}" across team charters and AORs:\n${bullets}\n\nWant me to draft a summary or point you to the right team?`;
+}
+
 const Copilot = () => {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [asked, setAsked] = useState<string | null>(null);
-
-  const results = useMemo(() => (query.trim() ? searchKnowledge(query) : []), [query]);
+  const initialMessages = [
+    {
+      role: "assistant" as const,
+      content:
+        'Hi! I’ve indexed team charters and AORs in this session. Ask me anything — e.g., "Who owns store operations?" or "What’s the Payments team’s charter?"',
+    },
+  ];
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>(initialMessages);
+  const listRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!open) {
-      setQuery("");
-      setAsked(null);
+      setInput("");
+      setMessages(initialMessages);
     }
   }, [open]);
+
+  // Open dialog when URL hash is #copilot (triggered by header button)
+  useEffect(() => {
+    const openFromHash = () => {
+      if (window.location.hash === "#copilot") setOpen(true);
+    };
+    openFromHash();
+    const onHashChange = () => openFromHash();
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  // Auto-scroll to latest message
+  useEffect(() => {
+    if (open) {
+      listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+    }
+  }, [messages, open]);
+
+  const handleSend = () => {
+    const q = input.trim();
+    if (!q) return;
+    const user = { role: "user" as const, content: q };
+    const assistant = { role: "assistant" as const, content: generateAssistantReply(q) };
+    setMessages((prev) => [...prev, user, assistant]);
+    setInput("");
+  };
 
   return (
     <div id="copilot">
@@ -52,38 +95,56 @@ const Copilot = () => {
             <DialogTitle>AI Knowledge Copilot</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Input
-                placeholder="Ask about any team’s charter or AORs…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
+            <div
+              ref={listRef}
+              className="rounded-lg border card-surface p-3 h-[360px] overflow-y-auto space-y-3"
+              aria-live="polite"
+            >
+              {messages.map((m, i) => (
+                <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <p
+                    className={
+                      m.role === "user"
+                        ? "ml-auto max-w-[85%] rounded-lg bg-primary px-3 py-2 text-primary-foreground"
+                        : "max-w-[85%] rounded-lg bg-secondary px-3 py-2 text-secondary-foreground"
+                    }
+                  >
+                    {m.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-end gap-2">
+              <Textarea
+                placeholder="Type your question…"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") setAsked(query);
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
                 }}
-                aria-label="Copilot question"
+                aria-label="Copilot message"
+                rows={2}
+                className="min-h-[56px] resize-none"
               />
-              <Button onClick={() => setAsked(query)} variant="secondary">
-                <Search className="h-4 w-4" />
+              <Button onClick={handleSend} variant="hero" aria-label="Send message">
+                <Send className="h-4 w-4" />
               </Button>
             </div>
-            {asked && (
-              <div className="rounded-lg border card-surface p-4">
-                {results.length ? (
-                  <ul className="space-y-3">
-                    {results.map((r, idx) => (
-                      <li key={idx} className="leading-relaxed">
-                        <div className="text-sm text-muted-foreground">From {r.team}</div>
-                        <p>{r.snippet}</p>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-muted-foreground">No direct matches yet — try a different phrase.</p>
-                )}
-              </div>
-            )}
+
+            <div className="flex flex-wrap gap-2 text-xs">
+              {["Who owns payments risk?", "Summarize Retail Ops charter.", "What are Growth team’s AORs?"].map((s) => (
+                <Button key={s} size="sm" variant="secondary" onClick={() => setInput(s)}>
+                  {s}
+                </Button>
+              ))}
+            </div>
+
             <p className="text-xs text-muted-foreground">
-              Preview: Answers are generated from team charters and AORs in this session. We can wire Supabase + LLM next.
+              Preview: This chat is a mock UX using indexed team charters and AORs. We can wire Supabase storage + LLM next.
             </p>
           </div>
         </DialogContent>
