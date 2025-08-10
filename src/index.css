@@ -2,104 +2,99 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Design System — Seoul Night Sky */
+/* All color tokens are HSL numbers; gradients/shadows are semantic strings */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Core surface & text */
+    --background: 222 64% 6%;          /* deep night navy */
+    --foreground: 210 40% 96%;         /* soft white */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 222 50% 8.5%;
+    --card-foreground: 210 40% 96%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 222 50% 9.5%;
+    --popover-foreground: 210 40% 96%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Brand & accents */
+    --primary: 200 90% 56%;            /* electric blue */
+    --primary-foreground: 222 64% 6%;  /* contrast on brand */
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 226 35% 16%;          /* muted navy */
+    --secondary-foreground: 210 40% 96%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 226 30% 20%;
+    --muted-foreground: 215 18% 72%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 190 95% 65%;             /* cyan glow */
+    --accent-foreground: 222 64% 6%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 70% 52%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Lines & rings */
+    --border: 223 38% 22%;
+    --input: 223 38% 22%;
+    --ring: 200 90% 56%;
 
-    --radius: 0.5rem;
+    /* Radii */
+    --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* Sidebar tokens (kept for shadcn sidebar) */
+    --sidebar-background: 222 64% 6%;
+    --sidebar-foreground: 210 40% 96%;
+    --sidebar-primary: 200 90% 56%;
+    --sidebar-primary-foreground: 222 64% 6%;
+    --sidebar-accent: 226 35% 16%;
+    --sidebar-accent-foreground: 210 40% 96%;
+    --sidebar-border: 223 38% 22%;
+    --sidebar-ring: 200 90% 56%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Galaxy flourishes */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+    --gradient-surface: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--background)) 100%);
 
-    --sidebar-primary: 240 5.9% 10%;
+    --shadow-glow: 0 0 24px hsl(var(--primary) / 0.35);
+    --shadow-elev: 0 12px 24px -8px hsl(var(--foreground) / 0.15);
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    --star: 210 40% 96%;
+    --star-dim: 215 18% 50%;
 
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --motion-fast: 180ms;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground font-sans; }
+}
+
+/* Signature background */
+@layer components {
+  .starfield {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(1px 1px at 20% 30%, hsl(var(--star)) 0, transparent 40%),
+      radial-gradient(1.5px 1.5px at 70% 60%, hsl(var(--star)) 0, transparent 45%),
+      radial-gradient(1.2px 1.2px at 40% 80%, hsl(var(--star-dim)) 0, transparent 50%),
+      radial-gradient(1px 1px at 80% 20%, hsl(var(--star)) 0, transparent 40%),
+      radial-gradient(1px 1px at 10% 70%, hsl(var(--star-dim)) 0, transparent 50%);
+    opacity: 0.5;
   }
 
-  body {
-    @apply bg-background text-foreground;
+  .card-surface {
+    background: var(--gradient-surface);
+    box-shadow: var(--shadow-elev);
   }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @layer utilities {
+    .animate-float { animation: float 9s var(--motion-ease) infinite alternate; }
+  }
+  @keyframes float { from { transform: translateY(0) } to { transform: translateY(-8px) } }
 }
